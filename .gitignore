@@ -1,12 +1,71 @@
-# Local Environment
-.env
-.env.local
-
-# Dependencies
-backend/vendor/
-frontend/node_modules/
-frontend/.next/
-
-# Docker/System
+# -----------------------------------------------------------------------------
+# GLOBAL & SYSTEM FILES
+# -----------------------------------------------------------------------------
 .DS_Store
+Thumbs.db
 *.log
+.idea/
+.vscode/
+.zed/
+.fleet/
+
+# -----------------------------------------------------------------------------
+# DOCKER & INFRASTRUCTURE
+# -----------------------------------------------------------------------------
+# Ignore local environment secrets
+.env
+.env.backup
+.env.production
+
+# Ignore local Docker volumes (if mapped locally)
+mysql_data/
+redis_data/
+
+# -----------------------------------------------------------------------------
+# BACKEND (LARAVEL)
+# Prefix all rules with 'backend/'
+# -----------------------------------------------------------------------------
+backend/vendor/
+backend/node_modules/
+backend/public/build/
+backend/public/hot/
+backend/public/storage/
+backend/storage/*.key
+backend/storage/framework/cache/data/
+backend/storage/logs/
+backend/.phpunit.result.cache
+backend/auth.json
+backend/Homestead.json
+backend/Homestead.yaml
+
+# Laravel Environment Files
+backend/.env
+backend/.env.example
+backend/.env.testing
+
+# -----------------------------------------------------------------------------
+# FRONTEND (NEXT.JS)
+# Prefix all rules with 'frontend/'
+# -----------------------------------------------------------------------------
+frontend/node_modules/
+frontend/build/
+frontend/out/
+frontend/.next/
+frontend/coverage/
+
+# Next.js Environment Files
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Yarn / PNP (If used)
+frontend/.pnp
+frontend/.pnp.js
+frontend/.yarn/
+
+# TypeScript & Vercel
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+frontend/.vercel/
