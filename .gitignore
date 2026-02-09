@@ -1,0 +1,12 @@
+# Local Environment
+.env
+.env.local
+
+# Dependencies
+backend/vendor/
+frontend/node_modules/
+frontend/.next/
+
+# Docker/System
+.DS_Store
+*.log
