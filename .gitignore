@@ -37,7 +37,7 @@ backend/.phpunit.result.cache
 backend/auth.json
 backend/Homestead.json
 backend/Homestead.yaml
-
+/vendor
 # Laravel Environment Files
 backend/.env
 backend/.env.example
