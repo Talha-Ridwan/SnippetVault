@@ -68,4 +68,8 @@ frontend/.yarn/
 # TypeScript & Vercel
 frontend/*.tsbuildinfo
 frontend/next-env.d.ts
+<<<<<<< HEAD
 frontend/.vercel/
+=======
+frontend/.vercel/
+>>>>>>> f0d5a7b (Made 2 controllers for oauth and the routes)

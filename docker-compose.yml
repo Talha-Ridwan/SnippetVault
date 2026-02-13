@@ -56,11 +56,12 @@ services:
       - ./backend:/var/www
     environment:
       # Database Connection (Matches 'mysql' service below)
+      DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_PORT: 3306
       DB_DATABASE: snippetvault
       DB_USERNAME: snippetuser
-      DB_PASSWORD: snippetpassword
+      DB_PASSWORD: '${DB_PASSWORD}'
       # Redis Connection (Matches 'redis' service below)
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -81,7 +82,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: snippetvault
       MYSQL_USER: snippetuser
-      MYSQL_PASSWORD: snippetpassword
+      MYSQL_PASSWORD: '${DB_PASSWORD}'
     # Persist data even if container is destroyed 
     volumes:
       - mysql_data:/var/lib/mysql
