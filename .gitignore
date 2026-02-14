@@ -42,7 +42,7 @@ backend/Homestead.yaml
 backend/.env
 backend/.env.example
 backend/.env.testing
-
+backend/_ide_helper.php
 # -----------------------------------------------------------------------------
 # FRONTEND (NEXT.JS)
 # Prefix all rules with 'frontend/'
