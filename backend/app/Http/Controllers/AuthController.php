@@ -6,16 +6,28 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Redis;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
 class AuthController extends Controller
 {
-    public function redirectToGithub()
+    public function redirectToGithub(Request $request)
     {
-        return Socialite::driver('github')
-            ->stateless()
-            ->redirect();
+        $key = 'login_attempts:' . $request->ip();
+        $currentAttempts = Redis::incr($key);
+
+        if ($currentAttempts === 1) {
+            Redis::expire($key, 60);
+        }
+
+        if ($currentAttempts > 5) {
+            return response()->json([
+                'message' => 'Too many login attempts. Chill out.'
+            ], 429);
+        }
+
+        return Socialite::driver('github')->stateless()->redirect();
     }
 
     public function handleGithubCallback()
@@ -46,7 +58,7 @@ class AuthController extends Controller
             return $user;
         }
         $user = User::query()->where('email', $githubUser->email)->first();
-
+        // Handling a rare case where the user might change their concerned profile attributes
         if ($user) {
             $user->update([
                 'github_id' => $githubUser->id,
