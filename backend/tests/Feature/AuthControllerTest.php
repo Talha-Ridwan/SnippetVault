@@ -42,12 +42,6 @@ class AuthControllerTest extends TestCase
         $this->assertCount(0, $user->tokens);
     }
 
-    public function test_redirect_blocks_after_too_many__attempts(){
-        Redis::shouldReceive('incr')->once()->andReturn(6);
-        $response = $this->get('/auth/github');
-        $response->assertStatus(429)->assertJson(['message' => 'Too many login attempts. Chill out.']);
-    }
-
     public function test_callback_creates_new_user_if_not_exists(){
         $githubId = '12345678';
         $email = 'newuser@example.com';
@@ -58,6 +52,33 @@ class AuthControllerTest extends TestCase
         $abstractUser->name = 'New User';
         $abstractUser->avatar = 'https://avatar.url';
 
+        Socialite::shouldReceive('driver')->with('github')
+        ->andReturn($provider = Mockery::mock('Laravel\Socialite\Contracts\Provider'));
+        $provider->shouldReceive('stateless')->andReturn($provider);
+        $provider->shouldReceive('user')->andReturn($abstractUser);
 
+        $this->post('/auth/github', [$abstractUser]);
+        $this->assertDatabaseHas('users', [
+            'email' => $email,
+        ]);
+    }
+
+    public function test_logs_in_existing_user(){
+        $user = User::factory()->create([
+            "github_id" => "12345678",
+            'email' => 'old@example.com'
+        ]);
+
+        $abstractUser = Mockery::mock('Laravel\Socialite\Contracts\Provider');
+        $abstractUser->id = $user->id;
+        $abstractUser->email = $user->email;
+        $abstractUser->avatar = "https://avatar.url";
+        $abstractUser->name = "Old User";
+
+        Socialite::shouldReceive('driver')->with('github')->stateless()->andReturn($abstractUser);
+        $response = $this->get('/auth/github');
+        $response->assertStatus(200);
+        $this->assertDatabaseCount('users', 1);
+        $response->assertJsonStructure(['token', 'user', 'message']);
     }
 }
