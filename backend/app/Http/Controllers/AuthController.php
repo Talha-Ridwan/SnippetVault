@@ -12,6 +12,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
 class AuthController extends Controller
 {
+    //api/auth/github/redirect
     public function redirectToGithub(Request $request)
     {
         $key = 'login_attempts:' . $request->ip();
@@ -30,6 +31,7 @@ class AuthController extends Controller
         return Socialite::driver('github')->stateless()->redirect();
     }
 
+    //api/auth/github/callback
     public function handleGithubCallback()
     {
         try {
