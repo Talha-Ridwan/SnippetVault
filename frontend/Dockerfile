@@ -1,21 +1,11 @@
-# Use Node.js 18 on Alpine Linux (Lightweight)
-FROM node:22-alpine
-
-# Set the working directory inside the container
+FROM node:20-alpine
 WORKDIR /app
 
-# Copy package definition files first (for better caching)
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
-# Install dependencies
-# We use 'ci' (Clean Install) for more reliable builds, or 'install' for dev
 RUN npm install
 
-# Copy the rest of your app's source code
 COPY . .
 
-# Expose Port 3000 (Default for Next.js)
-EXPOSE 3000
-
-# Start the development server with hot-reloading
+EXPOSE 5173
 CMD ["npm", "run", "dev"]
