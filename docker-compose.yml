@@ -7,10 +7,8 @@ services:
       context: ./nginx
       dockerfile: Dockerfile
     container_name: snippetvault_nginx
-    # Maps Host Port 80 (HTTP) -> Container Port 80
     ports:
       - "8080:80"
-    # Ensures Nginx starts only after the app is ready
     depends_on:
       - frontend
       - backend
@@ -18,7 +16,7 @@ services:
       - snippetvault_internal
 
   # ---------------------------------------------------------------------------
-  # 2. FRONTEND LAYER (Next.js) 
+  # 2. FRONTEND LAYER (React + Vite)
   # ---------------------------------------------------------------------------
   frontend:
     build:
@@ -26,20 +24,21 @@ services:
       dockerfile: Dockerfile
     container_name: snippetvault_frontend
     restart: unless-stopped
-    # Expose port for debugging (Nginx handles real traffic)
+    # Vite's default port is 5173
     ports:
-      - "3000:3000"
-    # Critical for Local Dev: Syncs your code changes instantly 
+      - "5173:5173"
     volumes:
       - ./frontend:/app
-      - /app/node_modules # prevents local node_modules from conflicting
+      - /app/node_modules
     environment:
       - NODE_ENV=development
+      # Forces Vite to watch for file changes inside Docker
+      - CHOKIDAR_USEPOLLING=true
     networks:
       - snippetvault_internal
 
   # ---------------------------------------------------------------------------
-  # 3. BACKEND LAYER (Laravel API) 
+  # 3. BACKEND LAYER (Laravel API)
   # ---------------------------------------------------------------------------
   backend:
     build:
@@ -48,21 +47,17 @@ services:
     container_name: snippetvault_backend
     restart: unless-stopped
     working_dir: /var/www
-    # Expose port for debugging
     ports:
-      - "8000:8000"
-    # Syncs your Laravel code changes instantly
+      - "1000:8000"
     volumes:
       - ./backend:/var/www
     environment:
-      # Database Connection (Matches 'mysql' service below)
       DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_PORT: 3306
       DB_DATABASE: snippetvault
       DB_USERNAME: snippetuser
       DB_PASSWORD: '${DB_PASSWORD}'
-      # Redis Connection (Matches 'redis' service below)
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:
@@ -72,7 +67,7 @@ services:
       - snippetvault_internal
 
   # ---------------------------------------------------------------------------
-  # 4. DATA LAYER (Primary Database) 
+  # 4. DATA LAYER (Primary Database)
   # ---------------------------------------------------------------------------
   mysql:
     image: mysql:8.0
@@ -83,38 +78,31 @@ services:
       MYSQL_DATABASE: snippetvault
       MYSQL_USER: snippetuser
       MYSQL_PASSWORD: '${DB_PASSWORD}'
-    # Persist data even if container is destroyed 
     volumes:
       - mysql_data:/var/lib/mysql
-    # Exposed ONLY for local debugging tools (TablePlus, DBeaver)
     ports:
       - "3306:3306"
     networks:
       - snippetvault_internal
 
   # ---------------------------------------------------------------------------
-  # 5. CACHE LAYER (High-Speed Cache) 
+  # 5. CACHE LAYER (High-Speed Cache)
   # ---------------------------------------------------------------------------
   redis:
     image: redis:alpine
     container_name: snippetvault_redis
     restart: unless-stopped
-    # Persist cache data (optional but good for dev)
     volumes:
       - redis_data:/data
-    # Exposed ONLY for local debugging
     ports:
       - "6379:6379"
     networks:
       - snippetvault_internal
 
-# ---------------------------------------------------------------------------
-# NETWORKS & VOLUMES
-# ---------------------------------------------------------------------------
 networks:
   snippetvault_internal:
-    driver: bridge # Isolates containers from the public internet 
+    driver: bridge
 
 volumes:
-  mysql_data: # Permanent storage for DB
-  redis_data: # Permanent storage for Cache
+  mysql_data:
+  redis_data:
