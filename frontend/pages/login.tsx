@@ -7,7 +7,10 @@ export default function LoginPage() {
             <Button 
             variant='primary'
             size='medium'
-            onClick={()=>console.log('Not yet implemented')}
+            onClick={()=>{
+
+            }}
+            id={"loginButton"}
             >Sign in or Create Account with Github</Button>
         </div>
     );

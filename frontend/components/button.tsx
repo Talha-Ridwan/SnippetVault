@@ -1,11 +1,9 @@
 import React from 'react';
 import './button.css';
 
-interface ButtonProps {
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: "primary" | "secondary";
     size?: "small" | "medium" | "large";
-    onClick?: () => void;
-    children: React.ReactNode;
 }
 
 const styles = {
@@ -15,24 +13,24 @@ const styles = {
         secondary: "bg-gray"
     },
     sizes: {
-        small: "scale-0.8",
-        medium: "scale-1.0",
-        large: "scale-1.2"
+        small: "scale-sm",
+        medium: "scale-md",
+        large: "scale-lg"
     }
 };
 
 export const Button = ({
-    variant = "primary",
-    size = "medium",
-    onClick,
-    children
-}: ButtonProps) => {
+                           variant = "primary",
+                           size = "medium",
+                           children,
+                           ...props
+                       }: ButtonProps) => {
     const selectedVariant = styles.variants[variant];
     const selectedSize = styles.sizes[size];
 
     return (
         <button
-            onClick={onClick}
+            {...props}
             className={`${styles.base} ${selectedVariant} ${selectedSize}`}
         >
             {children}
