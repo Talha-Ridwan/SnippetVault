@@ -40,18 +40,10 @@ class AuthController extends Controller
             return $this->loginUser($user);
 
         } catch (Exception $e) {
-            return response()->json([
-                'error' => 'Authentication failed',
-                'message' => $e->getMessage()
-            ], 422);
+            return redirect(config('app.frontend_url'). '/login?error=auth_failed');
         }
     }
-
-    /**
-     * @param SocialiteUser $githubUser
-     * @return User
-     */
-    protected function resolveGithubUser(SocialiteUser $githubUser)
+    protected function resolveGithubUser(SocialiteUser $githubUser): User
     {
         // Check by GitHub ID
         $user = User::query()->where('github_id', $githubUser->id)->first();
@@ -79,19 +71,11 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * @param User $user
-     * @return JsonResponse
-     */
     protected function loginUser(User $user)
     {
         $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'message' => 'User logged in successfully',
-            'user' => $user,
-            'token' => $token
-        ]);
+        $frontendUrl = config('app.frontend_url', '/');
+        return redirect($frontendUrl .'/auth-callback?token='. $token);
     }
 
     public function logout(Request $request)
