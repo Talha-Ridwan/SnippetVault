@@ -1,16 +1,31 @@
 
-import {Button} from "../components/button";
-export default function Dashboard() {
+import { useNavigate } from 'react-router-dom';
+import { Button } from "../components/button";
+import api from "../routes/api";
+
+export default function Dashboard({ onLogout }: { onLogout: () => void }) {
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        try {
+            await api.post('/logout');
+        } finally {
+            localStorage.removeItem('auth_token');
+            onLogout();
+            navigate('/login', { replace: true });
+        }
+    };
+
     return (
         <div>
-            console.log("This is the dashboard which hasn't been made yet, here's a logout button instead");
             <Button
                 size={'large'}
                 variant={'primary'}
                 id={'logoutButton'}
-                >
+                onClick={handleLogout}
+            >
                 Logout
             </Button>
         </div>
-    )
+    );
 }

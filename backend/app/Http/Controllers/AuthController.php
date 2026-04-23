@@ -6,7 +6,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\User;
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
@@ -16,17 +16,14 @@ class AuthController extends Controller
     public function redirectToGithub(Request $request)
     {
         $key = 'login_attempts:' . $request->ip();
-        $currentAttempts = Redis::incr($key);
 
-        if ($currentAttempts === 1) {
-            Redis::expire($key, 60);
-        }
-
-        if ($currentAttempts > 5) {
+        if (RateLimiter::tooManyAttempts($key, 5)) {
             return response()->json([
                 'message' => 'Too many login attempts. Chill out.'
             ], 429);
         }
+
+        RateLimiter::hit($key, 60);
 
         return Socialite::driver('github')->stateless()->redirect();
     }
@@ -36,6 +33,11 @@ class AuthController extends Controller
     {
         try {
             $githubUser = Socialite::driver('github')->stateless()->user();
+
+            if (empty($githubUser->email)) {
+                return redirect(config('app.frontend_url') . '/login?error=email_required');
+            }
+
             $user = $this->resolveGithubUser($githubUser);
             return $this->loginUser($user);
 

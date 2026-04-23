@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import LoginPage from '../pages/login';
@@ -5,15 +6,23 @@ import AuthCallback from '../pages/authcallback';
 import Dashboard from "../pages/dashboard.tsx";
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => !!localStorage.getItem('auth_token')
+  );
 
-  const isAuthenticated = !!localStorage.getItem('auth_token');
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setIsAuthenticated(!!localStorage.getItem('auth_token'));
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
-  // 2. The Traffic Cop Rules
   return (
       <BrowserRouter>
         <Routes>
 
-          <Route path="/auth-callback" element={<AuthCallback />} />
+          <Route path="/auth-callback" element={<AuthCallback onLogin={() => setIsAuthenticated(true)} />} />
           <Route
               path="/login"
               element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
@@ -21,7 +30,7 @@ export default function App() {
 
           <Route
               path="/dashboard"
-              element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />}
+              element={isAuthenticated ? <Dashboard onLogout={() => setIsAuthenticated(false)} /> : <Navigate to="/login" replace />}
           />
 
           <Route
