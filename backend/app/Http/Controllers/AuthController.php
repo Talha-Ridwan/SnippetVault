@@ -2,91 +2,57 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AuthService;
+use App\Services\GithubAuthService;
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use App\Models\User;
-use Illuminate\Support\Facades\RateLimiter;
-use Laravel\Socialite\Facades\Socialite;
-use Laravel\Sanctum\HasApiTokens;
-use Laravel\Socialite\Contracts\User as SocialiteUser;
+use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirectResponse;
+
 class AuthController extends Controller
 {
-    //api/auth/github/redirect
-    public function redirectToGithub(Request $request)
+    public function __construct(
+        private readonly GithubAuthService $githubAuth,
+        private readonly AuthService $auth,
+    ) {}
+
+
+    public function redirectToGithub(): SymfonyRedirectResponse
     {
-        $key = 'login_attempts:' . $request->ip();
-
-        if (RateLimiter::tooManyAttempts($key, 5)) {
-            return response()->json([
-                'message' => 'Too many login attempts. Chill out.'
-            ], 429);
-        }
-
-        RateLimiter::hit($key, 60);
-
-        return Socialite::driver('github')->stateless()->redirect();
+        return $this->githubAuth->redirect();
     }
 
-    //api/auth/github/callback
-    public function handleGithubCallbackAndLoginUser()
+    //only place user gets created or authenticated
+    public function handleGithubCallbackAndLoginUser(): RedirectResponse
     {
+        $frontendUrl = config('app.frontend_url', '/');
+
         try {
-            $githubUser = Socialite::driver('github')->stateless()->user();
+            $githubUser = $this->githubAuth->userFromCallback();
 
             if (empty($githubUser->email)) {
-                return redirect(config('app.frontend_url') . '/login?error=email_required');
+                return redirect($frontendUrl . '/login?error=email_required');
             }
 
-            $user = $this->resolveGithubUser($githubUser);
-            return $this->loginUser($user);
+            $user = $this->githubAuth->resolveUser($githubUser);
+            $token = $this->auth->issueApiToken($user);
 
+            return redirect($frontendUrl . '/auth-callback?token=' . $token);
         } catch (Exception $e) {
-            return redirect(config('app.frontend_url'). '/login?error=auth_failed');
+            return redirect($frontendUrl . '/login?error=auth_failed');
         }
     }
-    protected function resolveGithubUser(SocialiteUser $githubUser): User
+
+    public function logout(Request $request): JsonResponse
     {
-        // Check by GitHub ID
-        $user = User::query()->where('github_id', $githubUser->id)->first();
+        $this->auth->revokeCurrentToken($request->user());
 
-        if ($user) {
-            return $user;
-        }
-        $user = User::query()->where('email', $githubUser->email)->first();
-        // Handling a rare case where the user might change their concerned profile attributes
-        if ($user) {
-            $user->update([
-                'github_id' => $githubUser->id,
-                'avatar' => $githubUser->avatar
-            ]);
-
-            return $user;
-        }
-
-        // Create New User
-        return User::query()->create([
-            'name' => $githubUser->name ?? $githubUser->nickname,
-            'email' => $githubUser->email,
-            'github_id' => $githubUser->id,
-            'avatar' => $githubUser->avatar,
-        ]);
-    }
-
-    protected function loginUser(User $user)
-    {
-        $token = $user->createToken('auth_token')->plainTextToken;
-        $frontendUrl = config('app.frontend_url', '/');
-        return redirect($frontendUrl .'/auth-callback?token='. $token);
-    }
-
-    public function logout(Request $request)
-    {
-        $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Logged out successfully']);
     }
 
-    public function me(Request $request){
+    public function me(Request $request): JsonResponse
+    {
         return response()->json($request->user());
     }
 }

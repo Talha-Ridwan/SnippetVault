@@ -40,9 +40,10 @@ backend/Homestead.yaml
 /vendor
 # Laravel Environment Files
 backend/.env
-backend/.env.example
 backend/.env.testing
 backend/_ide_helper.php
+backend/_ide_helper_models.php
+backend/.phpstorm.meta.php
 # -----------------------------------------------------------------------------
 # FRONTEND (NEXT.JS)
 # Prefix all rules with 'frontend/'
@@ -68,9 +69,5 @@ frontend/.yarn/
 # TypeScript & Vercel
 frontend/*.tsbuildinfo
 frontend/next-env.d.ts
-<<<<<<< HEAD
 frontend/.vercel/
-=======
-frontend/.vercel/
->>>>>>> f0d5a7b (Made 2 controllers for oauth and the routes)
 /nvbnv/
