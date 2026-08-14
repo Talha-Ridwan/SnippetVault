@@ -3,12 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Snippet;
+use App\Services\SnippetService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SnippetController extends Controller
 {
+    public function __construct(
+        private readonly SnippetService $snippetService,
+    ) {}
 
-    public function makeSnippet(Request $request): Snippet
+    public function makeSnippet(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'title'     => 'required|string',
@@ -17,38 +22,27 @@ class SnippetController extends Controller
             'tags'      => 'nullable|array',
         ]);
 
-        return $request->user()->snippets()->create($validated);
+        $snippet = $this->snippetService->createForUser($request->user(), $validated);
+
+        return response()->json($snippet, 201);
     }
 
-    public function getSnippets(Request $request)
+    public function getSnippets(Request $request): JsonResponse
     {
-        return $request->user()
-            ->snippets()
-            ->latest()
-            ->paginate(15);
+        return response()->json(
+            $this->snippetService->paginateForUser($request->user())
+        );
     }
 
-    public function deleteSnippet(Request $request, Snippet $snippet)
+    public function deleteSnippet(Request $request, Snippet $snippet): JsonResponse
     {
-        $user = $request->user();
-
-        if ($user->id !== $snippet->user_id) {
-            abort(403, 'Unauthorized');
-        }
-
-        $snippet->delete();
+        $this->snippetService->deleteForUser($request->user(), $snippet);
 
         return response()->json(['message' => 'Snippet deleted successfully']);
     }
 
-    public function updateSnippet(Request $request, Snippet $snippet)
+    public function updateSnippet(Request $request, Snippet $snippet): JsonResponse
     {
-        $user = $request->user();
-
-        if ($user->id !== $snippet->user_id) {
-            abort(403, 'Unauthorized');
-        }
-
         $validated = $request->validate([
             'title'     => 'sometimes|required|string',
             'code_body' => 'sometimes|required|string',
@@ -56,11 +50,27 @@ class SnippetController extends Controller
             'tags'      => 'nullable|array',
         ]);
 
-        $snippet->update($validated);
+        $snippet = $this->snippetService->updateForUser($request->user(), $snippet, $validated);
 
         return response()->json([
-            'message' => 'Snippet updated successfully', 
-            'snippet' => $snippet
+            'message' => 'Snippet updated successfully',
+            'snippet' => $snippet,
         ]);
+    }
+    public function getSnippetByTag(Request $request): JsonResponse
+    {   
+        $user = $request->user();
+
+        if($user === null) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        };
+
+        $validated = $request->validate([
+            'tags' => 'required|array',
+        ]);
+
+        return response()->json(
+            $this->snippetService->getSnippetByTag($user, $validated['tags'])
+        );
     }
 }
